@@ -99,7 +99,7 @@ function describe_syndrome(material)
 	end
 
 	if output == "" then
-		output = "(no syndrome effects)"
+		output = "\t(no syndrome effects)\n"
 	end
 
 	return output
@@ -200,5 +200,5 @@ if dfhack.gui.getCurFocus() == "legends" or dfhack.gui.getCurFocus() == "dfhack/
 		scan_by_material()
 	end
 else
-    qerror('exportlegends must be run from the main legends view')
+    qerror('must be run from the main legends view')
 end
