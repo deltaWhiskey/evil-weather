@@ -133,6 +133,7 @@ function scan_by_material(filter)
 	local show_cloud = true
 	local show_rain = true
 	local syndrome
+	local regions_with_evil_weather = 0
 
 	--check filter
 	if filter == "cloud" then
@@ -156,27 +157,39 @@ function scan_by_material(filter)
 			goto loop_end
 		end
 
+		interaction_id = get_interaction_by_material(material_id)
+
+		region_count = 0
+		for k, v in pairs(df.global.world.interaction_instances.all) do
+			if v.interaction_id == interaction_id then
+				region_count = region_count + 1
+				regions_with_evil_weather = regions_with_evil_weather + 1
+			end
+		end
+
+		if (region_count < 1) then
+			goto loop_end
+		end
+
 		dfhack.color(COLOR_WHITE)
 		print(describe_weather(material))
 
 		dfhack.color(COLOR_GREY)
 		print(describe_syndrome(material))
 
-		interaction_id = get_interaction_by_material(material_id)
-
-		region_count = 0
+		-- this loop appears twice. Would be nice to do this only once
 		for k, v in pairs(df.global.world.interaction_instances.all) do
 			if v.interaction_id == interaction_id then
 				describe_region(v.region_index)
-				region_count = region_count + 1
 			end
 		end
 
-		if (region_count < 1) then
-			print("", "(no regions with this weather)")
-		end
-
 		::loop_end::
+	end
+
+	if regions_with_evil_weather < 1 then
+		dfhack.color(COLOR_RED)
+		print("no regions in this world have evil weather. How nice.")
 	end
 
 	dfhack.color(-1)
