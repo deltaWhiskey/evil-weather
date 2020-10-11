@@ -56,7 +56,6 @@ end
 -- provide numeric material id (position of material in list)
 -- returns numeric interaction id
 function get_interaction_by_material(material_id)
-	local interaction_id = nil
 	for k, v in pairs(df.global.world.raws.interactions) do
 		if #v.targets > 1 then
 			for target_k, target_v in pairs(v.targets[1]) do
@@ -66,39 +65,59 @@ function get_interaction_by_material(material_id)
 			end
 		end
 	end
+
+	return nil
+end
+
+-- given an object from inorganics array, return descriptive string
+function describe_weather(material)
+	for k, v in pairs(material.str) do
+		if string.find(v.value, "%[STATE_NAME:LIQUID:") == 1 
+			or string.find(v.value, "%[STATE_NAME:ALL:") == 1 then
+			return material.id, v.value
+		end
+	end
+
+	return nil
 end
 
 function scan_by_material()
 	local region
-	local link
 	local interaction_id
+	local region_count
 
 	-- loop once per evil weather material
 	for material_id, material in pairs(df.global.world.raws.inorganics) do
 
-		if is_rain_or_cloud(material.id) then
-			-- output name of weather
-			for k, v in pairs(material.str) do
-				if string.find(v.value, "%[STATE_NAME:LIQUID:") == 1 
-					or string.find(v.value, "%[STATE_NAME:ALL:") == 1 then
-					print(material.id, v.value)
-				end
-			end
-
-			-- find interaction id. We'll need this to link to region.
-			interaction_id = get_interaction_by_material(material_id)
-
-			-- find regions and print them
-			for k, v in pairs(df.global.world.interaction_instances.all) do
-				if v.interaction_id == interaction_id then
-					region = get_by_property(df.global.world.world_data.regions, 'index', v.region_index)
-					print("    ", dfhack.TranslateName(region.name, true))
-				end
-			end
-
+		if string.find(material.id, "EVIL_CLOUD") then
+			dfhack.color(COLOR_RED)
+		elseif string.find(material.id, "EVIL_RAIN") then
+			dfhack.color(COLOR_YELLOW)
+		else
+			goto loop_end
 		end
 
+		print(describe_weather(material))
+		interaction_id = get_interaction_by_material(material_id)
+
+		region_count = 0
+		dfhack.color(COLOR_GREY)
+		for k, v in pairs(df.global.world.interaction_instances.all) do
+			if v.interaction_id == interaction_id then
+				region = get_by_property(df.global.world.world_data.regions, 'index', v.region_index)
+				print("", dfhack.TranslateName(region.name, true))
+				region_count = region_count + 1
+			end
+		end
+
+		if (region_count < 1) then
+			print("", "(no regions with this weather)")
+		end
+
+		::loop_end::
 	end
+
+	dfhack.color(-1)
 
 end
 
