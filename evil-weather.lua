@@ -105,6 +105,18 @@ function describe_syndrome(material)
 	return output
 end
 
+function describe_region(region_index)
+	local region = get_by_property(df.global.world.world_data.regions, 'index', region_index)
+
+	local output = dfhack.TranslateName(region.name, true)
+
+	if region.reanimating then
+		output = output .. " (reanimating)"
+	end
+
+	return output
+end
+
 function scan_by_material(filter)
 	local region
 	local interaction_id
@@ -147,8 +159,7 @@ function scan_by_material(filter)
 		region_count = 0
 		for k, v in pairs(df.global.world.interaction_instances.all) do
 			if v.interaction_id == interaction_id then
-				region = get_by_property(df.global.world.world_data.regions, 'index', v.region_index)
-				print("", dfhack.TranslateName(region.name, true))
+				print("", describe_region(v.region_index))
 				region_count = region_count + 1
 			end
 		end
