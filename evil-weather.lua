@@ -6,6 +6,11 @@ evil-weather
 When you are in legends mode, use this to make a list of evil weather types
 and what regions have them.
 
+Options:
+
+:cloud: Only show evil clouds
+:rain:  Only show evil rain
+
 ]====]
 
 local args = {...}
@@ -81,17 +86,32 @@ function describe_weather(material)
 	return nil
 end
 
-function scan_by_material()
+function scan_by_material(filter)
 	local region
 	local interaction_id
 	local region_count
+	local show_cloud = true
+	local show_rain = true
+
+	--check filter
+	if filter == "cloud" then
+		show_rain = false
+	elseif filter == "rain" then
+		show_cloud = false
+	end
 
 	-- loop once per evil weather material
 	for material_id, material in pairs(df.global.world.raws.inorganics) do
 
 		if string.find(material.id, "EVIL_CLOUD") then
+			if show_cloud == false then
+				goto loop_end
+			end
 			dfhack.color(COLOR_RED)
 		elseif string.find(material.id, "EVIL_RAIN") then
+			if show_rain == false then
+				goto loop_end
+			end
 			dfhack.color(COLOR_YELLOW)
 		else
 			goto loop_end
@@ -131,6 +151,10 @@ if dfhack.gui.getCurFocus() == "legends" or dfhack.gui.getCurFocus() == "dfhack/
 		print_table(df.global.world.raws.interactions)
 	elseif args[1] == "inorganics" then
 		print_table(df.global.world.raws.inorganics)
+	elseif args[1] == "cloud" or args[1] == "clouds" then
+		scan_by_material("cloud")
+	elseif args[1] == "rain" then
+		scan_by_material("rain")
 	else
 		scan_by_material()
 	end
