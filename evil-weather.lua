@@ -86,14 +86,14 @@ function describe_weather(material)
 	return nil
 end
 
--- describe the syndrome inflicted by an inorganic material
+-- describe the syndrome inflicted by an inorganic material.
 function describe_syndrome(material)
 	local output = ""
 
 	for k, v in pairs(material.str) do
 		if string.find(v.value, "%[CE_") == 1 then
 			if v.value ~= "" then
-				output = output .. v.value .. "\n"
+				output = output .. "\t" .. v.value .. "\n"
 			end
 		end
 	end
@@ -105,16 +105,25 @@ function describe_syndrome(material)
 	return output
 end
 
+-- prints description directly to console
 function describe_region(region_index)
+
 	local region = get_by_property(df.global.world.world_data.regions, 'index', region_index)
 
-	local output = dfhack.TranslateName(region.name, true)
+	dfhack.color(COLOR_GREY)
+	dfhack.print("", dfhack.TranslateName(region.name, true))
 
-	if region.reanimating then
-		output = output .. " (reanimating)"
+	if region.dead_percentage ~= 0 then
+		dfhack.color(COLOR_YELLOW)
+		dfhack.print(" - " .. region.dead_percentage .. "% dead")
 	end
 
-	return output
+	if region.reanimating then
+		dfhack.color(COLOR_RED)
+		dfhack.print(" - reanimating")
+	end
+
+	dfhack.print("\n")
 end
 
 function scan_by_material(filter)
@@ -139,16 +148,15 @@ function scan_by_material(filter)
 			if show_cloud == false then
 				goto loop_end
 			end
-			dfhack.color(COLOR_RED)
 		elseif string.find(material.id, "EVIL_RAIN") then
 			if show_rain == false then
 				goto loop_end
 			end
-			dfhack.color(COLOR_YELLOW)
 		else
 			goto loop_end
 		end
 
+		dfhack.color(COLOR_WHITE)
 		print(describe_weather(material))
 
 		dfhack.color(COLOR_GREY)
@@ -159,7 +167,7 @@ function scan_by_material(filter)
 		region_count = 0
 		for k, v in pairs(df.global.world.interaction_instances.all) do
 			if v.interaction_id == interaction_id then
-				print("", describe_region(v.region_index))
+				describe_region(v.region_index)
 				region_count = region_count + 1
 			end
 		end
