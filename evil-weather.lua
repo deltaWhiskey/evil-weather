@@ -126,14 +126,27 @@ function describe_region(region_index)
 	dfhack.print("\n")
 end
 
+-- given numeric interaction id, return array of region_indexes
+function get_regions_by_interaction(interaction_id)
+	local region_indexes = {}
+
+	for k, v in pairs(df.global.world.interaction_instances.all) do
+		if v.interaction_id == interaction_id then
+			table.insert(region_indexes, v.region_index)
+		end
+	end
+
+	return region_indexes
+end
+
 function scan_by_material(filter)
 	local region
 	local interaction_id
-	local region_count
+	local region_count = 0
 	local show_cloud = true
 	local show_rain = true
 	local syndrome
-	local regions_with_evil_weather = 0
+	local affected_regions = {}
 
 	--check filter
 	if filter == "cloud" then
@@ -159,17 +172,15 @@ function scan_by_material(filter)
 
 		interaction_id = get_interaction_by_material(material_id)
 
-		region_count = 0
-		for k, v in pairs(df.global.world.interaction_instances.all) do
-			if v.interaction_id == interaction_id then
-				region_count = region_count + 1
-				regions_with_evil_weather = regions_with_evil_weather + 1
-			end
-		end
+		affected_regions = get_regions_by_interaction(interaction_id)
 
-		if (region_count < 1) then
+		if (#affected_regions < 1) then
 			goto loop_end
 		end
+
+		region_count = region_count + #affected_regions
+
+		-- print description of weather and regions
 
 		dfhack.color(COLOR_WHITE)
 		print(describe_weather(material))
@@ -177,17 +188,14 @@ function scan_by_material(filter)
 		dfhack.color(COLOR_GREY)
 		print(describe_syndrome(material))
 
-		-- this loop appears twice. Would be nice to do this only once
-		for k, v in pairs(df.global.world.interaction_instances.all) do
-			if v.interaction_id == interaction_id then
-				describe_region(v.region_index)
-			end
+		for k, region_index in pairs(affected_regions) do
+			describe_region(region_index)
 		end
 
 		::loop_end::
 	end
 
-	if regions_with_evil_weather < 1 then
+	if region_count < 1 then
 		dfhack.color(COLOR_RED)
 		print("no regions in this world have evil weather. How nice.")
 	end
