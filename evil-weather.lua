@@ -74,7 +74,7 @@ function get_interaction_by_material(material_id)
 	return nil
 end
 
--- given an object from inorganics array, return descriptive string
+-- describe the weather associated with an inorganic material
 function describe_weather(material)
 	for k, v in pairs(material.str) do
 		if string.find(v.value, "%[STATE_NAME:LIQUID:") == 1 
@@ -86,12 +86,32 @@ function describe_weather(material)
 	return nil
 end
 
+-- describe the syndrome inflicted by an inorganic material
+function describe_syndrome(material)
+	local output = ""
+
+	for k, v in pairs(material.str) do
+		if string.find(v.value, "%[CE_") == 1 then
+			if v.value ~= "" then
+				output = output .. v.value .. "\n"
+			end
+		end
+	end
+
+	if output == "" then
+		output = "(no syndrome effects)"
+	end
+
+	return output
+end
+
 function scan_by_material(filter)
 	local region
 	local interaction_id
 	local region_count
 	local show_cloud = true
 	local show_rain = true
+	local syndrome
 
 	--check filter
 	if filter == "cloud" then
@@ -118,10 +138,13 @@ function scan_by_material(filter)
 		end
 
 		print(describe_weather(material))
+
+		dfhack.color(COLOR_GREY)
+		print(describe_syndrome(material))
+
 		interaction_id = get_interaction_by_material(material_id)
 
 		region_count = 0
-		dfhack.color(COLOR_GREY)
 		for k, v in pairs(df.global.world.interaction_instances.all) do
 			if v.interaction_id == interaction_id then
 				region = get_by_property(df.global.world.world_data.regions, 'index', v.region_index)
@@ -141,7 +164,6 @@ function scan_by_material(filter)
 
 end
 
--- TODO add "cloud" and "rain" filters
 if dfhack.gui.getCurFocus() == "legends" or dfhack.gui.getCurFocus() == "dfhack/lua/legends" then
 	if args[1] == "regions" then
 		print_table(df.global.world.world_data.regions)
