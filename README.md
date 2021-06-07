@@ -24,5 +24,5 @@ This means:
 * EVIL_RAIN_11 is how Dwarf Fortress identifies this weather internally
 * It is a liquid weather (as opposed to gas cloud)
 * It is called "malodorous ooze"
-* It does not cause any magcal effects by touching creatures
+* It does not cause any magical effects by touching creatures
 * There is an area of the world called "The Mucous Winter" where this weather occurs
