@@ -3,15 +3,28 @@
 
 evil-weather
 =============
-When you are in legends mode, use this to make a list of evil weather types
-and what regions have them.
+When you are in legends mode, use this to make a list of evil weather types and what regions have them.
 
-Compatible with DFHack for Dwarf Fortress 50.xx/53.xx (Steam/Premium version).
+Usage
+_____
 
-Options:
+"evil-weather"
+   Show info about regions with evil weather
 
-:cloud: Only show evil clouds
-:rain:  Only show evil rain
+"evil-weather cloud"
+   Show info aobut regions with evil clouds (not evil rain)
+
+"evil-weather rain"
+   Show info about regions with evil rain (not evil clouds)
+
+"evil-weather regions"
+   Show technical details for all regions
+
+"evil-weather interactions"
+   Show technical details for the world's interactions (magical effects)
+
+"evil-weather inorganics"
+   Show technical details for the world's inorganic materials
 
 ]====]
 
@@ -184,22 +197,34 @@ function scan_by_material(filter)
 
 		-- print description of weather and regions
 
-		dfhack.color(COLOR_WHITE)
-		print(describe_weather(material))
-
-		dfhack.color(COLOR_GREY)
-		print(describe_syndrome(material))
-
+		print("found evil weather in:")
 		for k, region_index in pairs(affected_regions) do
 			describe_region(region_index)
 		end
+		print()
+
+		print("******************")
+		print("* weather details:")
+		print("******************")
+		dfhack.color(COLOR_WHITE)
+		print(describe_weather(material))
+		print()
+
+		print("******************")
+		print("* syndrome caused by weather:")
+		print("******************")
+		dfhack.color(COLOR_GREY)
+		print(describe_syndrome(material))
+
+		print("-----")
+		print()
 
 		::loop_end::
 	end
 
 	if region_count < 1 then
 		dfhack.color(COLOR_RED)
-		print("no regions in this world have evil weather. How nice.")
+		print("No regions in this world have evil weather. How nice.")
 	end
 
 	dfhack.color(-1)
@@ -209,8 +234,8 @@ end
 if dfhack.gui.matchFocusString('legends') then
 	if args[1] == "regions" then
 		print_table(df.global.world.world_data.regions)
-	elseif args[1] == "links" then
-		print_table(df.global.world.interaction_instances.all)
+--	elseif args[1] == "links" then
+--		print_table(df.global.world.interaction_instances.all)
 	elseif args[1] == "interactions" then
 		print_table(df.global.world.raws.interactions.all)
 	elseif args[1] == "inorganics" then
