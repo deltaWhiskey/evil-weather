@@ -33,7 +33,7 @@ _____
 
 local args = {...}
 
-function get_by_property(table, key, value)
+local function get_by_property(table, key, value)
 	for k, item in pairs(table) do
 		if item[key] == value then
 			return item
@@ -41,7 +41,7 @@ function get_by_property(table, key, value)
 	end
 end
 
-function print_table(table)
+local function print_table(table)
 	for id, item in pairs(table) do
 		if type(item) == "userdata" then
 			print("id: "..id)
@@ -55,37 +55,12 @@ function print_table(table)
 	end
 end
 
-function is_rain_or_cloud(string)
-	local index
-	local length
-
-	if string == nil then
-		return false
-	end
-
-	index, length = string.find(string, "EVIL_RAIN")
-	if index == 1 then
-		return true
-	end
-
-	index, length = string.find(string, "EVIL_CLOUD")
-	if index == 1 then
-		return true
-	end
-
-	return false
-end
-
 -- provide numeric material id (position of material in list)
 -- returns numeric interaction id
-function get_interaction_by_material(material_id)
+local function get_interaction_by_material(material_id)
 	for k, v in pairs(df.global.world.raws.interactions.all) do
-		if #v.targets > 1 then
-			for target_k, target_v in pairs(v.targets[1]) do
-				if (target_k == "mat_index" and target_v == material_id) then
-					return v.id
-				end
-			end
+		if #v.targets > 1 and v.targets[1].mat_index == material_id then
+			return v.id
 		end
 	end
 
@@ -93,7 +68,7 @@ function get_interaction_by_material(material_id)
 end
 
 -- describe the weather associated with an inorganic material
-function describe_weather(material)
+local function describe_weather(material)
 	for k, v in pairs(material.str) do
 		if string.find(v.value, "%[STATE_NAME:LIQUID:") == 1 
 			or string.find(v.value, "%[STATE_NAME:ALL:") == 1 then
@@ -105,7 +80,7 @@ function describe_weather(material)
 end
 
 -- describe the syndrome inflicted by an inorganic material.
-function describe_syndrome(material)
+local function describe_syndrome(material)
 	local output = ""
 
 	for k, v in pairs(material.str) do
@@ -124,7 +99,7 @@ function describe_syndrome(material)
 end
 
 -- prints description directly to console
-function describe_region(region_index)
+local function describe_region(region_index)
 
 	local region = get_by_property(df.global.world.world_data.regions, 'index', region_index)
 
@@ -145,7 +120,7 @@ function describe_region(region_index)
 end
 
 -- given numeric interaction id, return array of region_indexes
-function get_regions_by_interaction(interaction_id)
+local function get_regions_by_interaction(interaction_id)
 	local region_indexes = {}
 
 	for k, v in pairs(df.global.world.interaction_instances.all) do
@@ -158,7 +133,7 @@ function get_regions_by_interaction(interaction_id)
 end
 
 -- print list of reanimating regions
-function scan_for_dead()
+local function scan_for_dead()
 	local reanimating_regions_found = 0
 
 	for index, region in pairs(df.global.world.world_data.regions) do
@@ -178,13 +153,11 @@ function scan_for_dead()
 
 end
 
-function scan_by_material(filter)
-	local region
+local function scan_by_material(filter)
 	local interaction_id
 	local region_count = 0
 	local show_cloud = true
 	local show_rain = true
-	local syndrome
 	local affected_regions = {}
 
 	--check filter
@@ -251,7 +224,7 @@ function scan_by_material(filter)
 		print("No regions in this world have evil weather. How nice.")
 	end
 
-	dfhack.color(-1)
+	dfhack.color(-1)  -- reset to default color
 
 end
 
