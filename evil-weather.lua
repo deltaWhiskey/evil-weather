@@ -6,7 +6,7 @@ evil-weather
 When you are in legends mode, use this to make a list of evil weather types
 and what regions have them.
 
-Compatible with DFHack for Dwarf Fortress 50.xx (Steam/Premium version).
+Compatible with DFHack for Dwarf Fortress 50.xx/53.xx (Steam/Premium version).
 
 Options:
 
@@ -63,7 +63,7 @@ end
 -- provide numeric material id (position of material in list)
 -- returns numeric interaction id
 function get_interaction_by_material(material_id)
-	for k, v in pairs(df.global.world.raws.interactions) do
+	for k, v in pairs(df.global.world.raws.interactions.all) do
 		if #v.targets > 1 then
 			for target_k, target_v in pairs(v.targets[1]) do
 				if (target_k == "mat_index" and target_v == material_id) then
@@ -158,7 +158,7 @@ function scan_by_material(filter)
 	end
 
 	-- loop once per evil weather material
-	for material_id, material in pairs(df.global.world.raws.inorganics) do
+	for material_id, material in pairs(df.global.world.raws.inorganics.all) do
 
 		if string.find(material.id, "EVIL_CLOUD") then
 			if show_cloud == false then
@@ -212,9 +212,9 @@ if dfhack.gui.matchFocusString('legends') then
 	elseif args[1] == "links" then
 		print_table(df.global.world.interaction_instances.all)
 	elseif args[1] == "interactions" then
-		print_table(df.global.world.raws.interactions)
+		print_table(df.global.world.raws.interactions.all)
 	elseif args[1] == "inorganics" then
-		print_table(df.global.world.raws.inorganics)
+		print_table(df.global.world.raws.inorganics.all)
 	elseif args[1] == "cloud" or args[1] == "clouds" then
 		scan_by_material("cloud")
 	elseif args[1] == "rain" then
