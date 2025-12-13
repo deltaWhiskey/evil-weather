@@ -6,6 +6,8 @@ evil-weather
 When you are in legends mode, use this to make a list of evil weather types
 and what regions have them.
 
+Compatible with DFHack for Dwarf Fortress 50.xx (Steam/Premium version).
+
 Options:
 
 :cloud: Only show evil clouds
@@ -204,7 +206,7 @@ function scan_by_material(filter)
 
 end
 
-if dfhack.gui.getCurFocus() == "legends" or dfhack.gui.getCurFocus() == "dfhack/lua/legends" then
+if dfhack.gui.matchFocusString('legends') then
 	if args[1] == "regions" then
 		print_table(df.global.world.world_data.regions)
 	elseif args[1] == "links" then
