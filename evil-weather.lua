@@ -11,6 +11,9 @@ _____
 "evil-weather"
    Show info about regions with evil weather
 
+"evil-weather reanimating"
+   Show info about regions where the dead reanimate
+
 "evil-weather cloud"
    Show info aobut regions with evil clouds (not evil rain)
 
@@ -154,6 +157,27 @@ function get_regions_by_interaction(interaction_id)
 	return region_indexes
 end
 
+-- print list of reanimating regions
+function scan_for_dead()
+	local reanimating_regions_found = 0
+
+	for index, region in pairs(df.global.world.world_data.regions) do
+
+		if region.dead_percentage ~= 0 then
+			describe_region(region.index)
+			reanimating_regions_found = reanimating_regions_found + 1
+		end
+	end
+
+	if reanimating_regions_found == 0 then
+		print("No reanimating regions found. What a pleasant world!")
+	else
+		print()
+		print("Note: %s show how much of the plants will be dead. \"reanimating\" means corpses become undead monsters there.")
+	end
+
+end
+
 function scan_by_material(filter)
 	local region
 	local interaction_id
@@ -232,7 +256,9 @@ function scan_by_material(filter)
 end
 
 if dfhack.gui.matchFocusString('legends') then
-	if args[1] == "regions" then
+	if args[1] == "reanimating" then
+		scan_for_dead()
+	elseif args[1] == "regions" then
 		print_table(df.global.world.world_data.regions)
 --	elseif args[1] == "links" then
 --		print_table(df.global.world.interaction_instances.all)
