@@ -59,8 +59,12 @@ end
 -- returns numeric interaction id
 local function get_interaction_by_material(material_id)
 	for k, v in pairs(df.global.world.raws.interactions.all) do
-		if #v.targets > 1 and v.targets[1].mat_index == material_id then
-			return v.id
+		if #v.targets > 1 then
+			-- use pcall because not all target types have mat_index field
+			local ok, mat_idx = pcall(function() return v.targets[1].mat_index end)
+			if ok and mat_idx == material_id then
+				return v.id
+			end
 		end
 	end
 
