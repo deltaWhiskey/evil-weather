@@ -134,7 +134,7 @@ function get_regions_by_interaction(interaction_id)
 
 	for k, v in pairs(df.global.world.interaction_instances.all) do
 		if v.interaction_id == interaction_id then
-			table.insert(region_indexes, v.region_index)
+			table.insert(region_indexes, v.source_context.region_index)
 		end
 	end
 
