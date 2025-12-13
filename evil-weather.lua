@@ -113,7 +113,7 @@ function describe_region(region_index)
 	local region = get_by_property(df.global.world.world_data.regions, 'index', region_index)
 
 	dfhack.color(COLOR_GREY)
-	dfhack.print("", dfhack.TranslateName(region.name, true))
+	dfhack.print("", dfhack.translation.translateName(region.name, true))
 
 	if region.dead_percentage ~= 0 then
 		dfhack.color(COLOR_YELLOW)
