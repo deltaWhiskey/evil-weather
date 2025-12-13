@@ -15,7 +15,7 @@ _____
    Show info about regions where the dead reanimate
 
 "evil-weather cloud"
-   Show info aobut regions with evil clouds (not evil rain)
+   Show info about regions with evil clouds (not evil rain)
 
 "evil-weather rain"
    Show info about regions with evil rain (not evil clouds)
@@ -173,7 +173,7 @@ function scan_for_dead()
 		print("No reanimating regions found. What a pleasant world!")
 	else
 		print()
-		print("Note: %s show how much of the plants will be dead. \"reanimating\" means corpses become undead monsters there.")
+		print("Note: Percentages show how much of the plants will be dead. \"reanimating\" means corpses become undead monsters there.")
 	end
 
 end
