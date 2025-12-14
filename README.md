@@ -1,5 +1,7 @@
 # evil-weather
-DFHack LUA script to find regions with evil weather
+DFHack LUA script to find regions with evil weather.
+
+Tested with Dwarf Fortress v53.06
 
 # install
 Requires that DFHack be installed

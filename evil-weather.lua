@@ -3,19 +3,37 @@
 
 evil-weather
 =============
-When you are in legends mode, use this to make a list of evil weather types
-and what regions have them.
+When you are in legends mode, use this to make a list of evil weather types and what regions have them.
 
-Options:
+Usage
+_____
 
-:cloud: Only show evil clouds
-:rain:  Only show evil rain
+"evil-weather"
+   Show info about regions with evil weather
+
+"evil-weather reanimating"
+   Show info about regions where the dead reanimate
+
+"evil-weather cloud"
+   Show info about regions with evil clouds (not evil rain)
+
+"evil-weather rain"
+   Show info about regions with evil rain (not evil clouds)
+
+"evil-weather regions"
+   Show technical details for all regions
+
+"evil-weather interactions"
+   Show technical details for the world's interactions (magical effects)
+
+"evil-weather inorganics"
+   Show technical details for the world's inorganic materials
 
 ]====]
 
 local args = {...}
 
-function get_by_property(table, key, value)
+local function get_by_property(table, key, value)
 	for k, item in pairs(table) do
 		if item[key] == value then
 			return item
@@ -23,7 +41,7 @@ function get_by_property(table, key, value)
 	end
 end
 
-function print_table(table)
+local function print_table(table)
 	for id, item in pairs(table) do
 		if type(item) == "userdata" then
 			print("id: "..id)
@@ -37,36 +55,15 @@ function print_table(table)
 	end
 end
 
-function is_rain_or_cloud(string)
-	local index
-	local length
-
-	if string == nil then
-		return false
-	end
-
-	index, length = string.find(string, "EVIL_RAIN")
-	if index == 1 then
-		return true
-	end
-
-	index, length = string.find(string, "EVIL_CLOUD")
-	if index == 1 then
-		return true
-	end
-
-	return false
-end
-
 -- provide numeric material id (position of material in list)
 -- returns numeric interaction id
-function get_interaction_by_material(material_id)
-	for k, v in pairs(df.global.world.raws.interactions) do
+local function get_interaction_by_material(material_id)
+	for k, v in pairs(df.global.world.raws.interactions.all) do
 		if #v.targets > 1 then
-			for target_k, target_v in pairs(v.targets[1]) do
-				if (target_k == "mat_index" and target_v == material_id) then
-					return v.id
-				end
+			-- use pcall because not all target types have mat_index field
+			local ok, mat_idx = pcall(function() return v.targets[1].mat_index end)
+			if ok and mat_idx == material_id then
+				return v.id
 			end
 		end
 	end
@@ -75,7 +72,7 @@ function get_interaction_by_material(material_id)
 end
 
 -- describe the weather associated with an inorganic material
-function describe_weather(material)
+local function describe_weather(material)
 	for k, v in pairs(material.str) do
 		if string.find(v.value, "%[STATE_NAME:LIQUID:") == 1 
 			or string.find(v.value, "%[STATE_NAME:ALL:") == 1 then
@@ -87,7 +84,7 @@ function describe_weather(material)
 end
 
 -- describe the syndrome inflicted by an inorganic material.
-function describe_syndrome(material)
+local function describe_syndrome(material)
 	local output = ""
 
 	for k, v in pairs(material.str) do
@@ -106,12 +103,12 @@ function describe_syndrome(material)
 end
 
 -- prints description directly to console
-function describe_region(region_index)
+local function describe_region(region_index)
 
 	local region = get_by_property(df.global.world.world_data.regions, 'index', region_index)
 
 	dfhack.color(COLOR_GREY)
-	dfhack.print("", dfhack.TranslateName(region.name, true))
+	dfhack.print("", dfhack.translation.translateName(region.name, true))
 
 	if region.dead_percentage ~= 0 then
 		dfhack.color(COLOR_YELLOW)
@@ -127,25 +124,44 @@ function describe_region(region_index)
 end
 
 -- given numeric interaction id, return array of region_indexes
-function get_regions_by_interaction(interaction_id)
+local function get_regions_by_interaction(interaction_id)
 	local region_indexes = {}
 
 	for k, v in pairs(df.global.world.interaction_instances.all) do
 		if v.interaction_id == interaction_id then
-			table.insert(region_indexes, v.region_index)
+			table.insert(region_indexes, v.source_context.region_index)
 		end
 	end
 
 	return region_indexes
 end
 
-function scan_by_material(filter)
-	local region
+-- print list of reanimating regions
+local function scan_for_dead()
+	local reanimating_regions_found = 0
+
+	for index, region in pairs(df.global.world.world_data.regions) do
+
+		if region.dead_percentage ~= 0 then
+			describe_region(region.index)
+			reanimating_regions_found = reanimating_regions_found + 1
+		end
+	end
+
+	if reanimating_regions_found == 0 then
+		print("No reanimating regions found. What a pleasant world!")
+	else
+		print()
+		print("Note: Percentages show how much of the plants will be dead. \"reanimating\" means corpses become undead monsters there.")
+	end
+
+end
+
+local function scan_by_material(filter)
 	local interaction_id
 	local region_count = 0
 	local show_cloud = true
 	local show_rain = true
-	local syndrome
 	local affected_regions = {}
 
 	--check filter
@@ -156,7 +172,7 @@ function scan_by_material(filter)
 	end
 
 	-- loop once per evil weather material
-	for material_id, material in pairs(df.global.world.raws.inorganics) do
+	for material_id, material in pairs(df.global.world.raws.inorganics.all) do
 
 		if string.find(material.id, "EVIL_CLOUD") then
 			if show_cloud == false then
@@ -182,37 +198,51 @@ function scan_by_material(filter)
 
 		-- print description of weather and regions
 
-		dfhack.color(COLOR_WHITE)
-		print(describe_weather(material))
-
-		dfhack.color(COLOR_GREY)
-		print(describe_syndrome(material))
-
+		print("found evil weather in:")
 		for k, region_index in pairs(affected_regions) do
 			describe_region(region_index)
 		end
+		print()
+
+		print("******************")
+		print("* weather details:")
+		print("******************")
+		dfhack.color(COLOR_WHITE)
+		print(describe_weather(material))
+		print()
+
+		print("******************")
+		print("* syndrome caused by weather:")
+		print("******************")
+		dfhack.color(COLOR_GREY)
+		print(describe_syndrome(material))
+
+		print("-----")
+		print()
 
 		::loop_end::
 	end
 
 	if region_count < 1 then
 		dfhack.color(COLOR_RED)
-		print("no regions in this world have evil weather. How nice.")
+		print("No regions in this world have evil weather. How nice.")
 	end
 
-	dfhack.color(-1)
+	dfhack.color(-1)  -- reset to default color
 
 end
 
-if dfhack.gui.getCurFocus() == "legends" or dfhack.gui.getCurFocus() == "dfhack/lua/legends" then
-	if args[1] == "regions" then
+if dfhack.gui.matchFocusString('legends') then
+	if args[1] == "reanimating" then
+		scan_for_dead()
+	elseif args[1] == "regions" then
 		print_table(df.global.world.world_data.regions)
-	elseif args[1] == "links" then
-		print_table(df.global.world.interaction_instances.all)
+--	elseif args[1] == "links" then
+--		print_table(df.global.world.interaction_instances.all)
 	elseif args[1] == "interactions" then
-		print_table(df.global.world.raws.interactions)
+		print_table(df.global.world.raws.interactions.all)
 	elseif args[1] == "inorganics" then
-		print_table(df.global.world.raws.inorganics)
+		print_table(df.global.world.raws.inorganics.all)
 	elseif args[1] == "cloud" or args[1] == "clouds" then
 		scan_by_material("cloud")
 	elseif args[1] == "rain" then
