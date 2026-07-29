@@ -33,14 +33,6 @@ _____
 
 local args = {...}
 
-local function get_by_property(table, key, value)
-	for k, item in pairs(table) do
-		if item[key] == value then
-			return item
-		end
-	end
-end
-
 local function print_table(table)
 	for id, item in pairs(table) do
 		if type(item) == "userdata" then
@@ -56,19 +48,33 @@ local function print_table(table)
 end
 
 -- provide numeric material id (position of material in list)
--- returns numeric interaction id
-local function get_interaction_by_material(material_id)
+-- returns array of numeric interaction ids
+local function get_interactions_by_material(material_id)
+	local interaction_ids = {}
+
 	for k, v in pairs(df.global.world.raws.interactions.all) do
-		if #v.targets > 1 then
-			-- use pcall because not all target types have mat_index field
-			local ok, mat_idx = pcall(function() return v.targets[1].mat_index end)
-			if ok and mat_idx == material_id then
-				return v.id
+
+		-- the material can sit at any target position, so check them all.
+		-- reanimating weather carries a second target, plain weather does not,
+		-- and looking only at the second one hides every plain weather type.
+		for target_index = 0, #v.targets - 1 do
+			local target = v.targets[target_index]
+
+			-- use pcall because not all target types have material fields
+			local ok, mat_type, mat_index = pcall(function()
+				return target.mat_type, target.mat_index
+			end)
+
+			-- mat_index only identifies a material alongside its mat_type,
+			-- and evil weather is always inorganic (mat_type 0)
+			if ok and mat_type == 0 and mat_index == material_id then
+				table.insert(interaction_ids, v.id)
+				break
 			end
 		end
 	end
 
-	return nil
+	return interaction_ids
 end
 
 -- describe the weather associated with an inorganic material
@@ -103,9 +109,7 @@ local function describe_syndrome(material)
 end
 
 -- prints description directly to console
-local function describe_region(region_index)
-
-	local region = get_by_property(df.global.world.world_data.regions, 'index', region_index)
+local function describe_region(region)
 
 	dfhack.color(COLOR_GREY)
 	dfhack.print("", dfhack.translation.translateName(region.name, true))
@@ -123,17 +127,32 @@ local function describe_region(region_index)
 	dfhack.print("\n")
 end
 
--- given numeric interaction id, return array of region_indexes
-local function get_regions_by_interaction(interaction_id)
-	local region_indexes = {}
+-- given array of numeric interaction ids, return array of regions
+local function get_regions_by_interactions(interaction_ids)
+	local regions = {}
+	local all_regions = df.global.world.world_data.regions
+	local wanted = {}
+	local seen = {}
+
+	for k, interaction_id in pairs(interaction_ids) do
+		wanted[interaction_id] = true
+	end
 
 	for k, v in pairs(df.global.world.interaction_instances.all) do
-		if v.interaction_id == interaction_id then
-			table.insert(region_indexes, v.source_context.region_index)
+		if wanted[v.interaction_id] then
+
+			local position = v.source_context.region_index
+
+			-- one material can belong to several interactions, so the same
+			-- region may be reached more than once. Only list it once.
+			if position >= 0 and position < #all_regions and not seen[position] then
+				seen[position] = true
+				table.insert(regions, all_regions[position])
+			end
 		end
 	end
 
-	return region_indexes
+	return regions
 end
 
 -- print list of reanimating regions
@@ -143,7 +162,7 @@ local function scan_for_dead()
 	for index, region in pairs(df.global.world.world_data.regions) do
 
 		if region.dead_percentage ~= 0 then
-			describe_region(region.index)
+			describe_region(region)
 			reanimating_regions_found = reanimating_regions_found + 1
 		end
 	end
@@ -158,7 +177,7 @@ local function scan_for_dead()
 end
 
 local function scan_by_material(filter)
-	local interaction_id
+	local interaction_ids
 	local region_count = 0
 	local show_cloud = true
 	local show_rain = true
@@ -186,9 +205,9 @@ local function scan_by_material(filter)
 			goto loop_end
 		end
 
-		interaction_id = get_interaction_by_material(material_id)
+		interaction_ids = get_interactions_by_material(material_id)
 
-		affected_regions = get_regions_by_interaction(interaction_id)
+		affected_regions = get_regions_by_interactions(interaction_ids)
 
 		if (#affected_regions < 1) then
 			goto loop_end
@@ -199,8 +218,8 @@ local function scan_by_material(filter)
 		-- print description of weather and regions
 
 		print("found evil weather in:")
-		for k, region_index in pairs(affected_regions) do
-			describe_region(region_index)
+		for k, region in pairs(affected_regions) do
+			describe_region(region)
 		end
 		print()
 
