@@ -117,6 +117,11 @@ local function describe_weather(material)
 		end
 	end
 
+	-- these names read "<adjective> <noun>", and a state with no adjective of
+	-- its own keeps the space where one would go: evil rain is "boiling putrid
+	-- ooze" as a gas but " putrid ooze" as a liquid.
+	name = string.match(name, "^%s*(.-)%s*$")
+
 	return material.id, state, name
 end
 
