@@ -47,10 +47,14 @@ local function print_table(table)
 	end
 end
 
--- provide numeric material id (position of material in list)
--- returns array of numeric interaction ids
-local function get_interactions_by_material(material_id)
-	local interaction_ids = {}
+-- walk the world's interactions once, and return a lookup table of
+-- numeric material id -> array of numeric interaction ids.
+--
+-- this was previously a search performed once per material, which meant
+-- walking every interaction in the world ~108 times over. On a heavily evil
+-- world (~29000 interactions) that single function was 99% of the runtime.
+local function index_interactions_by_material()
+	local index = {}
 
 	for k, v in pairs(df.global.world.raws.interactions.all) do
 
@@ -60,21 +64,27 @@ local function get_interactions_by_material(material_id)
 		for target_index = 0, #v.targets - 1 do
 			local target = v.targets[target_index]
 
-			-- use pcall because not all target types have material fields
-			local ok, mat_type, mat_index = pcall(function()
-				return target.mat_type, target.mat_index
-			end)
+			-- only material targets carry mat_type and mat_index. mat_index
+			-- identifies a material only alongside its mat_type, and evil
+			-- weather is always inorganic (mat_type 0).
+			if df.interaction_target_materialst:is_instance(target)
+				and target.mat_type == 0 then
 
-			-- mat_index only identifies a material alongside its mat_type,
-			-- and evil weather is always inorganic (mat_type 0)
-			if ok and mat_type == 0 and mat_index == material_id then
-				table.insert(interaction_ids, v.id)
-				break
+				local material_id = target.mat_index
+
+				if index[material_id] == nil then
+					index[material_id] = {}
+				end
+
+				-- an interaction naming the same material at two targets is
+				-- listed twice; harmless, as the ids are folded into a set
+				-- before they are used.
+				table.insert(index[material_id], v.id)
 			end
 		end
 	end
 
-	return interaction_ids
+	return index
 end
 
 -- describe the weather associated with an inorganic material
@@ -190,6 +200,8 @@ local function scan_by_material(filter)
 		show_cloud = false
 	end
 
+	local interactions_by_material = index_interactions_by_material()
+
 	-- loop once per evil weather material
 	for material_id, material in pairs(df.global.world.raws.inorganics.all) do
 
@@ -205,7 +217,11 @@ local function scan_by_material(filter)
 			goto loop_end
 		end
 
-		interaction_ids = get_interactions_by_material(material_id)
+		interaction_ids = interactions_by_material[material_id]
+
+		if interaction_ids == nil then
+			goto loop_end
+		end
 
 		affected_regions = get_regions_by_interactions(interaction_ids)
 
