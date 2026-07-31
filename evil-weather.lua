@@ -14,6 +14,9 @@ _____
 "evil-weather reanimating"
    Show info about regions where the dead reanimate
 
+"evil-weather dead"
+   Show info about regions where the plants are dying
+
 "evil-weather cloud"
    Show info about regions with evil clouds (not evil rain)
 
@@ -165,25 +168,43 @@ local function get_regions_by_interactions(interaction_ids)
 	return regions
 end
 
--- print list of reanimating regions
-local function scan_for_dead()
-	local reanimating_regions_found = 0
+-- print every region the test accepts. "matches" is given one region and
+-- returns true to list it.
+local function scan_regions(matches, none_found)
+	local regions_found = 0
 
 	for index, region in pairs(df.global.world.world_data.regions) do
 
-		if region.dead_percentage ~= 0 then
+		if matches(region) then
 			describe_region(region)
-			reanimating_regions_found = reanimating_regions_found + 1
+			regions_found = regions_found + 1
 		end
 	end
 
-	if reanimating_regions_found == 0 then
-		print("No reanimating regions found. What a pleasant world!")
+	if regions_found == 0 then
+		print(none_found)
 	else
 		print()
 		print("Note: Percentages show how much of the plants will be dead. \"reanimating\" means corpses become undead monsters there.")
 	end
 
+end
+
+-- print list of reanimating regions.
+-- this used to test dead_percentage, which is a different thing: it listed
+-- regions whose plants die without raising the dead, and skipped reanimating
+-- regions whose plants are unaffected.
+local function scan_for_reanimating()
+	scan_regions(
+		function(region) return region.reanimating end,
+		"No reanimating regions found. What a pleasant world!")
+end
+
+-- print list of regions where the plants are dying
+local function scan_for_dead()
+	scan_regions(
+		function(region) return region.dead_percentage ~= 0 end,
+		"No regions with dying plants found. What a pleasant world!")
 end
 
 local function scan_by_material(filter)
@@ -269,6 +290,8 @@ end
 
 if dfhack.gui.matchFocusString('legends') then
 	if args[1] == "reanimating" then
+		scan_for_reanimating()
+	elseif args[1] == "dead" then
 		scan_for_dead()
 	elseif args[1] == "regions" then
 		print_table(df.global.world.world_data.regions)
