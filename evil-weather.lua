@@ -90,16 +90,34 @@ local function index_interactions_by_material()
 	return index
 end
 
--- describe the weather associated with an inorganic material
+-- describe the weather associated with an inorganic material.
+-- returns its id, whether it falls as gas or liquid, and what it is called.
+--
+-- this used to search the raw tokens for STATE_NAME, which generated weather
+-- no longer carries: it names itself with STATE_NAME_ADJ instead, so every
+-- material reported nil. Read the material's own state_name field, which
+-- Dwarf Fortress fills from either token.
 local function describe_weather(material)
-	for k, v in pairs(material.str) do
-		if string.find(v.value, "%[STATE_NAME:LIQUID:") == 1 
-			or string.find(v.value, "%[STATE_NAME:ALL:") == 1 then
-			return material.id, v.value
+	local state = "gas"
+	local name = material.material.state_name.Gas
+
+	if string.find(material.id, "EVIL_RAIN", 1, true) then
+		state = "liquid"
+		name = material.material.state_name.Liquid
+	end
+
+	-- STATE_NAME_ADJ:ALL names every state alike, but a material naming only
+	-- one state leaves the rest empty. Fall back to whichever state has one.
+	if name == "" then
+		for k, v in pairs(material.material.state_name) do
+			if v ~= "" then
+				name = v
+				break
+			end
 		end
 	end
 
-	return nil
+	return material.id, state, name
 end
 
 -- describe the syndrome inflicted by an inorganic material.
